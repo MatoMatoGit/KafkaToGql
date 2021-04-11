@@ -3,11 +3,11 @@ from datetime import datetime
 
 
 def TimestampToDatetime(timestamp):
-    return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d|%H:%M:%S")
 
 
 def DatetimeToTimestamp(dt):
-    d = datetime.strptime(dt, "%Y-%m-%dT%H:%M:%SZ")
+    d = datetime.strptime(dt, "%Y-%m-%d|%H:%M:%S")
     return time.mktime(d.timetuple())
 
 
