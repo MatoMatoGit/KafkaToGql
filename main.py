@@ -139,7 +139,7 @@ def MessageDataToQuery(data, id, msg_type, timestamp):
 def ProcessMessage(client, msg):
     # {"network": NETWORK_TTN, "dev_id": dev_id, "rssi": rssi, "snr": snr, "time": time, "data": payload})
     id = msg["meta"]["network"]["dev_id"]
-    datetime = msg["meta"]["network"]["time"]
+    datetime = msg["meta"]["network"]["rx_time"]
     payload = msg["data"]
 
     msg_type = payload[MSG_SECTION_META][MSG_META_TYPE]
