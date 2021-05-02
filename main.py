@@ -28,6 +28,9 @@ SUBTYPE_BATTERY_REPORT      = 2
 SUBTYPE_TEMPERATURE_REPORT  = 3
 SUBTYPE_GROWTH_REPORT       = 4
 
+TYPE_REGISTRATION           = 1
+SUBTYPE_REGISTRATION        = 0
+
 def HrToSec(hr):
     return 3600 * hr
 
@@ -144,6 +147,9 @@ def ProcessMessage(client, msg):
 
     msg_type = payload[MSG_SECTION_META][MSG_META_TYPE]
     msg_stype = payload[MSG_SECTION_META][MSG_META_SUBTYPE]
+
+    if msg_type is TYPE_REGISTRATION:
+        return 0
 
     samples = payload[MSG_SECTION_DATA][DATA_KEY_MEASUREMENTS]
 
