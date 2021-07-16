@@ -97,8 +97,6 @@ def MessageTypeToString(msg_type, msg_subtype):
 
 
 def GenerateTimestamp(msg_type, msg_subtype, receive_datetime, num_samples):
-    if msg_type is not TYPE_REPORT:
-        return None
 
     try:
         gen = MessageTypeMap[msg_type][msg_subtype]["timestamp_gen"]
