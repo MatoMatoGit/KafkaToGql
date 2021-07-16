@@ -31,6 +31,9 @@ SUBTYPE_GROWTH_REPORT       = 4
 TYPE_REGISTRATION           = 1
 SUBTYPE_REGISTRATION        = 0
 
+TYPE_CONN_INFO       = 2
+SUBTYPE_CONN_INFO    = 0
+
 def HrToSec(hr):
     return 3600 * hr
 
@@ -39,15 +42,6 @@ TRANSMIT_INTERVAL = HrToSec(4)
 TEMP_SAMPLE_INTERVAL = HrToSec(1)
 BATTERY_SAMPLE_INTERVAL = HrToSec(24)
 MOISTURE_SAMPLE_INTERVAL = HrToSec(4)
-
-
-TempTimestampA = TimestampGenA(sample_interval_sec=TEMP_SAMPLE_INTERVAL,
-                               transmit_interval_sec=TRANSMIT_INTERVAL)
-BatteryTimestampA = TimestampGenA(sample_interval_sec=BATTERY_SAMPLE_INTERVAL,
-                                  transmit_interval_sec=TRANSMIT_INTERVAL)
-MoistureTimestampA = TimestampGenA(sample_interval_sec=MOISTURE_SAMPLE_INTERVAL,
-                                   transmit_interval_sec=TRANSMIT_INTERVAL)
-
 
 TempTimestampB = TimestampGenB(sample_interval_sec=TEMP_SAMPLE_INTERVAL,
                                transmit_interval_sec=TRANSMIT_INTERVAL)
@@ -59,47 +53,46 @@ MoistureTimestampB = TimestampGenB(sample_interval_sec=MOISTURE_SAMPLE_INTERVAL,
 GrowthTimestampB = TimestampGenB(sample_interval_sec=MOISTURE_SAMPLE_INTERVAL,
                                    transmit_interval_sec=TRANSMIT_INTERVAL)
 
+ConnInfoTimestamp = TimestampGenB(sample_interval_sec=0,
+                                   transmit_interval_sec=0)
+
 MessageTypeMap = {
-    SUBTYPE_MOISTURE_REPORT: {
-        "name": "MOIST",
-        "timestamp_gen": {
-            "A": MoistureTimestampA,
-            "B": MoistureTimestampB
+    
+    TYPE_REPORT: {
+        SUBTYPE_MOISTURE_REPORT: {
+            "name": "MOIST",
+            "timestamp_gen": MoistureTimestampB
+        },
+
+        SUBTYPE_TEMPERATURE_REPORT: {
+            "name": "TEMP",
+            "timestamp_gen": TempTimestampB
+        },
+        SUBTYPE_BATTERY_REPORT: {
+            "name": "BAT",
+            "timestamp_gen": BatteryTimestampB
+        },
+        SUBTYPE_GROWTH_REPORT: {
+            "name": "GROWTH",
+            "timestamp_gen": GrowthTimestampB
         }
     },
 
-    SUBTYPE_TEMPERATURE_REPORT: {
-        "name": "TEMP",
-        "timestamp_gen": {
-            "A": TempTimestampA,
-            "B": TempTimestampB
-        }
-    },
-    SUBTYPE_BATTERY_REPORT: {
-        "name": "BAT",
-        "timestamp_gen": {
-            "A": BatteryTimestampA,
-            "B": BatteryTimestampB
-        }
-    },
-    SUBTYPE_GROWTH_REPORT: {
-        "name": "GROWTH",
-        "timestamp_gen": {
-            "A": None,
-            "B": GrowthTimestampB
+    TYPE_CONN_INFO: {
+        SUBTYPE_CONN_INFO: {
+            "name": "CONN",
+            "timestamp_gen": ConnInfoTimestamp
         }
     }
+
 }
 
 
 def MessageTypeToString(msg_type, msg_subtype):
-    if msg_type is not TYPE_REPORT:
-        return None
-
     try:
-        return MessageTypeMap[msg_subtype]["name"]
+        return MessageTypeMap[msg_type][msg_subtype]["name"]
     except KeyError:
-        print("ERROR: No such Message subtype: {}".format(msg_subtype))
+        print("ERROR: No such Message {}:{}".format(msg_type, msg_subtype))
         return None
 
 
@@ -108,7 +101,7 @@ def GenerateTimestamp(msg_type, msg_subtype, receive_datetime, num_samples):
         return None
 
     try:
-        gen = MessageTypeMap[msg_subtype]["timestamp_gen"]["B"]
+        gen = MessageTypeMap[msg_type][msg_subtype]["timestamp_gen"]
         gen.SetNumberOfSamples(num_samples=num_samples)
         gen.SetReceiveTimestamp(receive_datetime)
 
@@ -170,7 +163,7 @@ def ProcessMessage(client, msg):
         query = MessageDataToQuery(s, id, msg_type_str, timestamp)
         print(client.execute(query))
 
-    gen = MessageTypeMap[msg_stype]["timestamp_gen"]["B"]
+    gen = MessageTypeMap[msg_type][msg_stype]["timestamp_gen"]
     gen.Reset()
     gen.SavePreviousReceiveTimestamp()
 
