@@ -6,6 +6,7 @@ import time
 import getopt
 import json
 import sys
+import math
 
 Consumer = KafkaConsumer('uplink.data', value_deserializer=lambda m: json.loads(m.decode('utf-8')))
 
@@ -129,6 +130,12 @@ def MessageDataToQuery(data, id, msg_type, timestamp):
     }
     """)
 
+def RawToTemperatureInCelsius(raw) float:
+    offset = 0.3
+    slope = 0.01
+    bits_per_volt = 3.6/math.pow(2,12)
+    voltage = raw * bits_per_volt
+    return (voltage - offset) / slope
 
 def ProcessMessage(client, msg):
     # {"network": NETWORK_TTN, "dev_id": dev_id, "rssi": rssi, "snr": snr, "time": time, "data": payload})
@@ -157,6 +164,8 @@ def ProcessMessage(client, msg):
         return -1
 
     for s in samples:
+        if msg_stype is SUBTYPE_TEMPERATURE_REPORT:
+            s = RawToTemperatureInCelsius(s)
         timestamp = GenerateTimestamp(msg_type, msg_stype, datetime, len(samples))
         query = MessageDataToQuery(s, id, msg_type_str, timestamp)
         print(client.execute(query))
