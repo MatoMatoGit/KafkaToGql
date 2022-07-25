@@ -130,7 +130,7 @@ def MessageDataToQuery(data, id, msg_type, timestamp):
     }
     """)
 
-def RawToTemperatureInCelsius(raw) float:
+def RawToTemperatureInCelsius(raw):
     offset = 0.3
     slope = 0.01
     bits_per_volt = 3.6/math.pow(2,12)
