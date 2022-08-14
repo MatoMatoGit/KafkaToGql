@@ -29,6 +29,12 @@ SUBTYPE_BATTERY_REPORT      = 2
 SUBTYPE_TEMPERATURE_REPORT  = 3
 SUBTYPE_GROWTH_REPORT       = 4
 
+MOISTURE_LEVEL_RAW_MAX          = 3500
+MOISTURE_LEVEL_RAW_MIN          = 1500
+
+MOISTURE_LEVEL_FLIPPED_MAX          = 2000
+MOISTURE_LEVEL_FLIPPED_MIN          = 0
+
 TYPE_REGISTRATION           = 1
 SUBTYPE_REGISTRATION        = 0
 
@@ -39,10 +45,10 @@ def HrToSec(hr):
     return 3600 * hr
 
 
-TRANSMIT_INTERVAL = HrToSec(4)
+TRANSMIT_INTERVAL = HrToSec(1)
 TEMP_SAMPLE_INTERVAL = HrToSec(1)
-BATTERY_SAMPLE_INTERVAL = HrToSec(24)
-MOISTURE_SAMPLE_INTERVAL = HrToSec(4)
+BATTERY_SAMPLE_INTERVAL = HrToSec(1)
+MOISTURE_SAMPLE_INTERVAL = HrToSec(1)
 
 TempTimestampB = TimestampGenB(sample_interval_sec=TEMP_SAMPLE_INTERVAL,
                                transmit_interval_sec=TRANSMIT_INTERVAL)
@@ -137,6 +143,13 @@ def RawToTemperatureInCelsius(raw):
     voltage = raw * bits_per_volt
     return (voltage - offset) / slope
 
+def FlipSoilMoistureLevel(raw):
+    moisture_level = MOISTURE_LEVEL_RAW_MAX - raw
+    if moisture_level < MOISTURE_LEVEL_FLIPPED_MIN:
+        moisture_level = MOISTURE_LEVEL_FLIPPED_MIN
+    elif moisture_level > MOISTURE_LEVEL_FLIPPED_MAX:
+        moisture_level = MOISTURE_LEVEL_FLIPPED_MAX
+ 
 def ProcessMessage(client, msg):
     # {"network": NETWORK_TTN, "dev_id": dev_id, "rssi": rssi, "snr": snr, "time": time, "data": payload})
     id = msg["meta"]["network"]["dev_id"]
@@ -166,6 +179,8 @@ def ProcessMessage(client, msg):
     for s in samples:
         if msg_stype is SUBTYPE_TEMPERATURE_REPORT:
             s = RawToTemperatureInCelsius(s)
+        elif msg_type is SUBTYPE_MOISTURE_REPORT:
+            s = FlipSoilMoistureLevel(s)
         timestamp = GenerateTimestamp(msg_type, msg_stype, datetime, len(samples))
         query = MessageDataToQuery(s, id, msg_type_str, timestamp)
         print(client.execute(query))
